@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Manager - Kanban</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/kanban.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Auth Screen -->
+    <div id="authScreen" class="auth-container">
+        <div class="auth-form">
+            <h2>🚀 Project Manager</h2>
+            <div class="form-toggle">
+                <button id="loginTab" class="active" type="button">Login</button>
+                <button id="registerTab" type="button">Registrar</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form-content">
+                <div class="form-group">
+                    <input type="email" id="loginEmail" placeholder="E-mail" value="admin@projectmanager.com" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="loginPassword" placeholder="Senha" value="123456" required>
+                </div>
+                <button type="submit" class="btn-auth">
+                    <i class="fas fa-sign-in-alt"></i> Entrar
+                </button>
+
+                <div class="demo-credentials">
+                    <p><strong>Credenciais de Teste:</strong></p>
+                    <p>Email: admin@projectmanager.com</p>
+                    <p>Senha: 123456</p>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="auth-form-content" style="display: none;">
+                <div class="form-group">
+                    <input type="text" id="registerName" placeholder="Nome completo" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="registerEmail" placeholder="E-mail" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerPassword" placeholder="Senha (mínimo 6 caracteres)" required minlength="6">
+                </div>
+                <button type="submit" class="btn-auth">
+                    <i class="fas fa-user-plus"></i> Criar Conta
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appScreen" class="app-container" style="display: none;">
+        <div class="header">
+            <div class="header-left">
+                <h1>📋 Project Manager - Kanban</h1>
+                <span id="userWelcome">Bem-vindo!</span>
+            </div>
+            <div class="header-right">
+                <!-- Botão de Gerenciar Usuários será adicionado aqui via JavaScript -->
+                <button onclick="showProjectModal()" class="btn-primary">
+                    <i class="fas fa-plus"></i> Novo Projeto
+                </button>
+                <button onclick="showTaskModal()" class="btn-primary">
+                    <i class="fas fa-tasks"></i> Nova Tarefa
+                </button>
+                <button onclick="logout()" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+            </div>
+        </div>
+
+        <!-- Toggle de Views -->
+        <div class="view-toggle">
+            <button class="view-btn active" onclick="showView('kanban')">
+                <i class="fas fa-columns"></i> Kanban
+            </button>
+            <button class="view-btn" onclick="showView('dashboard')">
+                <i class="fas fa-chart-bar"></i> Dashboard
+            </button>
+            <button class="view-btn" onclick="showView('users')" id="usersViewBtn" style="display: none;">
+                <i class="fas fa-users"></i> Usuários
+            </button>
+        </div>
+
+        <!-- Seção: Kanban Board -->
+        <div id="kanbanSection" class="main-content">
+            <!-- Estatísticas Rápidas -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Projetos Ativos</h3>
+                        <span id="totalProjects">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Total de Tarefas</h3>
+                        <span id="totalTasks">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Concluídas</h3>
+                        <span id="completedTasks">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Progresso Geral</h3>
+                        <span id="overallProgress">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controles do Kanban -->
+            <div class="kanban-controls">
+                <div class="search-box">
+                    <input type="text" id="taskSearch" placeholder="🔍 Buscar tarefas..." onkeyup="filterTasks()">
+                </div>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" onclick="filterByPriority('all')">Todas</button>
+                    <button class="filter-btn" onclick="filterByPriority('high')">🔴 Alta</button>
+                    <button class="filter-btn" onclick="filterByPriority('medium')">🟡 Média</button>
+                    <button class="filter-btn" onclick="filterByPriority('low')">🔵 Baixa</button>
+                </div>
+            </div>
+
+            <!-- Board Kanban -->
+            <div class="kanban-board">
+                <!-- Coluna: A Fazer -->
+                <div class="kanban-column" data-status="todo">
+                    <div class="column-header">
+                        <h3>📝 A Fazer</h3>
+                        <span class="task-count" id="todoCount">0</span>
+                    </div>
+                    <div class="tasks-list" id="todoTasks" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        <!-- Tarefas serão adicionadas aqui via JavaScript -->
+                    </div>
+                    <button class="add-task-btn" onclick="showTaskModal('todo')">
+                        <i class="fas fa-plus"></i> Adicionar Tarefa
+                    </button>
+                </div>
+
+                <!-- Coluna: Em Progresso -->
+                <div class="kanban-column" data-status="inprogress">
+                    <div class="column-header">
+                        <h3>🚀 Em Progresso</h3>
+                        <span class="task-count" id="inProgressCount">0</span>
+                    </div>
+                    <div class="tasks-list" id="inProgressTasks" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        <!-- Tarefas serão adicionadas aqui via JavaScript -->
+                    </div>
+                    <button class="add-task-btn" onclick="showTaskModal('inprogress')">
+                        <i class="fas fa-plus"></i> Adicionar Tarefa
+                    </button>
+                </div>
+
+                <!-- Coluna: Concluído -->
+                <div class="kanban-column" data-status="done">
+                    <div class="column-header">
+                        <h3>✅ Concluído</h3>
+                        <span class="task-count" id="doneCount">0</span>
+                    </div>
+                    <div class="tasks-list" id="doneTasks" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        <!-- Tarefas serão adicionadas aqui via JavaScript -->
+                    </div>
+                    <button class="add-task-btn" onclick="showTaskModal('done')">
+                        <i class="fas fa-plus"></i> Adicionar Tarefa
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção: Dashboard -->
+        <div id="dashboardSection" class="section" style="display: none;">
+            <h2>📊 Dashboard Analytics</h2>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <canvas id="progressChart" height="250"></canvas>
+                </div>
+                <div class="chart-card">
+                    <canvas id="priorityChart" height="250"></canvas>
+                </div>
+                <div class="chart-card">
+                    <canvas id="burnDownChart" height="250"></canvas>
+                </div>
+                <div class="chart-card">
+                    <canvas id="teamChart" height="250"></canvas>
+                </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h4>📈 Velocidade da Equipe</h4>
+                    <div class="metric-value">12 tasks/semana</div>
+                    <div class="metric-trend up">+5%</div>
+                </div>
+                <div class="metric-card">
+                    <h4>⏱️ Tempo Médio</h4>
+                    <div class="metric-value">3.2 dias/task</div>
+                    <div class="metric-trend down">-10%</div>
+                </div>
+                <div class="metric-card">
+                    <h4>🎯 Taxa de Conclusão</h4>
+                    <div class="metric-value">78%</div>
+                    <div class="metric-trend up">+8%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção: Gerenciamento de Usuários -->
+        <div id="usersSection" class="section" style="display: none;">
+            <div class="section-header">
+                <h2>👥 Gerenciamento de Usuários</h2>
+                <button class="btn-primary" onclick="showModal('createUserModal')">
+                    <i class="fas fa-user-plus"></i> Novo Usuário
+                </button>
+            </div>
+
+            <div class="users-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Total de Usuários</h3>
+                        <span id="totalUsers">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Usuários Ativos</h3>
+                        <span id="activeUsers">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Administradores</h3>
+                        <span id="adminUsers">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="users-list-container">
+                <div class="list-header">
+                    <h3>Lista de Usuários</h3>
+                    <div class="search-box">
+                        <input type="text" id="userSearch" placeholder="🔍 Buscar usuários..." onkeyup="filterUsers()">
+                    </div>
+                </div>
+                <div class="users-list" id="usersList">
+                    <!-- Usuários serão carregados aqui -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Novo Projeto -->
+    <div id="projectModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('projectModal')">&times;</span>
+            <h3>📁 Novo Projeto</h3>
+            <form id="projectForm">
+                <div class="form-group">
+                    <input type="text" id="projectTitle" placeholder="Nome do projeto" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="projectDescription" placeholder="Descrição do projeto" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Data de Entrega:</label>
+                    <input type="date" id="projectDeadline" required>
+                </div>
+                <div class="form-group">
+                    <label>Prioridade:</label>
+                    <select id="projectPriority">
+                        <option value="low">🔵 Baixa</option>
+                        <option value="medium">🟡 Média</option>
+                        <option value="high">🔴 Alta</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-plus"></i> Criar Projeto
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Nova Tarefa -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('taskModal')">&times;</span>
+            <h3>📝 Nova Tarefa</h3>
+            <form id="taskForm">
+                <div class="form-group">
+                    <input type="text" id="taskTitle" placeholder="Título da tarefa" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="taskDescription" placeholder="Descrição da tarefa" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Responsável:</label>
+                    <input type="text" id="taskAssignee" placeholder="Nome do responsável">
+                </div>
+                <div class="form-group">
+                    <label>Prioridade:</label>
+                    <select id="taskPriority">
+                        <option value="low">🔵 Baixa</option>
+                        <option value="medium">🟡 Média</option>
+                        <option value="high">🔴 Alta</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Esforço (horas):</label>
+                    <input type="number" id="taskEffort" placeholder="Ex: 8" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Projeto:</label>
+                    <select id="taskProject">
+                        <option value="">Sem projeto</option>
+                        <!-- Projetos serão carregados aqui -->
+                    </select>
+                </div>
+                <input type="hidden" id="taskStatus">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-plus"></i> Criar Tarefa
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Detalhes da Tarefa -->
+    <div id="taskDetailModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('taskDetailModal')">&times;</span>
+            <div id="taskDetailContent">
+                <!-- Detalhes da tarefa serão carregados aqui -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Criar Usuário -->
+    <div id="createUserModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('createUserModal')">&times;</span>
+            <h3>👤 Novo Usuário</h3>
+            <form id="createUserForm">
+                <div class="form-group">
+                    <input type="text" id="newUserName" placeholder="Nome completo" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="newUserEmail" placeholder="E-mail" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="newUserPassword" placeholder="Senha (mínimo 6 caracteres)" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Usuário:</label>
+                    <select id="newUserRole">
+                        <option value="user">👤 Usuário</option>
+                        <option value="manager">📊 Gerente</option>
+                        <option value="admin">👑 Administrador</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-user-plus"></i> Criar Usuário
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Editar Usuário -->
+    <div id="editUserModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editUserModal')">&times;</span>
+            <h3>✏️ Editar Usuário</h3>
+            <form id="editUserForm">
+                <div class="form-group">
+                    <input type="text" id="editUserName" placeholder="Nome completo" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="editUserEmail" placeholder="E-mail" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Usuário:</label>
+                    <select id="editUserRole">
+                        <option value="user">👤 Usuário</option>
+                        <option value="manager">📊 Gerente</option>
+                        <option value="admin">👑 Administrador</option>
+                    </select>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="editUserActive"> Usuário ativo
+                    </label>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save"></i> Salvar Alterações
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/kanban.js"></script>
+    <script src="js/users.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Inicialização global
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Project Manager inicializado!');
+            checkAuthStatus();
+        });
+
+        // Sistema de Views
+        function showView(view) {
+            // Esconder todas as seções
+            document.getElementById('kanbanSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'none';
+            document.getElementById('usersSection').style.display = 'none';
+
+            // Remover active de todos os botões
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Mostrar seção selecionada e ativar botão
+            switch(view) {
+                case 'kanban':
+                    document.getElementById('kanbanSection').style.display = 'block';
+                    break;
+                case 'dashboard':
+                    document.getElementById('dashboardSection').style.display = 'block';
+                    if (typeof chartSystem !== 'undefined') {
+                        chartSystem.initCharts();
+                    }
+                    break;
+                case 'users':
+                    document.getElementById('usersSection').style.display = 'block';
+                    if (typeof userManager !== 'undefined') {
+                        userManager.loadUsers();
+                    }
+                    break;
+            }
+
+            // Ativar botão clicado
+            event.target.classList.add('active');
+        }
+
+        // Utilitários para modais
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            // Resetar formulários se necessário
+            if (modalId === 'createUserModal') {
+                document.getElementById('createUserForm').reset();
+            }
+            if (modalId === 'editUserModal') {
+                document.getElementById('editUserForm').reset();
+            }
+        }
+
+        // Filtro de usuários
+        function filterUsers() {
+            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+            const userCards = document.querySelectorAll('.user-card');
+
+            userCards.forEach(card => {
+                const name = card.querySelector('.user-name').textContent.toLowerCase();
+                const email = card.querySelector('.user-email').textContent.toLowerCase();
+
+                const matchesSearch = name.includes(searchTerm) || email.includes(searchTerm);
+                card.style.display = matchesSearch ? 'flex' : 'none';
+            });
+        }
+
+        // Adicionar botão de usuários se for admin
+        function setupAdminFeatures() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.role === 'admin') {
+                // Mostrar botão de usuários no toggle
+                document.getElementById('usersViewBtn').style.display = 'block';
+
+                // Inicializar gerenciador de usuários
+                if (typeof userManager !== 'undefined') {
+                    userManager.initialize();
+                }
+            }
+        }
+
+        // Função global para mostrar mensagens
+        function showMessage(message, type = 'info') {
+            // Remove mensagem anterior
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alert.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 8px;
+                color: white;
+                z-index: 10000;
+                font-weight: 500;
+                max-width: 400px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                animation: slideInRight 0.3s ease;
+            `;
+
+            if (type === 'success') {
+                alert.style.background = '#28a745';
+            } else if (type === 'error') {
+                alert.style.background = '#dc3545';
+            } else {
+                alert.style.background = '#17a2b8';
+            }
+
+            document.body.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 4000);
+        }
+
+        // Função global para loading
+        function showLoading(message = 'Carregando...') {
+            const loading = document.createElement('div');
+            loading.id = 'loadingOverlay';
+            loading.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.7);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 9999;
+                    color: white;
+                    font-size: 18px;
+                    backdrop-filter: blur(3px);
+                ">
+                    <div style="text-align: center; background: white; padding: 2rem; border-radius: 10px; color: #333;">
+                        <div style="
+                            width: 50px;
+                            height: 50px;
+                            border: 4px solid #f3f3f3;
+                            border-top: 4px solid #4361ee;
+                            border-radius: 50%;
+                            animation: spin 1s linear infinite;
+                            margin: 0 auto 1rem;
+                        "></div>
+                        <div style="font-weight: 500;">${message}</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(loading);
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loadingOverlay');
+            if (loading) {
+                loading.remove();
+            }
+        }
+
+        // Adiciona estilos de animação
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Fechar modais ao clicar fora
+        window.addEventListener('click', function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
