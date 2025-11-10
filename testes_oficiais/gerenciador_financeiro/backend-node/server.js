@@ -209,10 +209,13 @@ app.get('/api/setup/seed-categories', protect, async (req, res) => {
       { id: 4, name: 'Saúde', type: 'expense' },
       { id: 5, name: 'Educação', type: 'expense' },
       { id: 6, name: 'Lazer', type: 'expense' },
-      { id: 7, name: 'Salário', type: 'income' },
-      { id: 8, name: 'Freelance', type: 'income' },
-      { id: 9, name: 'Investimentos', type: 'income' },
-      { id: 10, name: 'Presente', type: 'income' }
+      { id: 7, name: 'Aluguel', type: 'income' },
+      { id: 8, name: 'Salário', type: 'income' },
+      { id: 9, name: 'Freelance', type: 'income' },
+      { id: 10, name: 'Investimentos', type: 'income' },
+      { id: 11, name: 'Presente', type: 'income' },
+      { id: 12, name: 'Reembolsos', type: 'income'},
+      { id: 13, name: 'Bônus', type: 'income'}
     ];
 
     // 2. Adiciona o ID do usuário
